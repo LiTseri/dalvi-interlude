@@ -95,7 +95,7 @@ type StatusInfo = { limit: number; shown: number; isOffToday: boolean; activeMin
 // Replies to /breathe subcommands, in the person's language.
 const MSG = {
   el: {
-    help: (h: HelpInfo) => [
+    help: (info: HelpInfo) => [
       'Dalvì Interlude · μικρά διαλείμματα 1–5 λεπτών, με επιστημονική βάση',
       '',
       'ΕΝΤΟΛΕΣ',
@@ -106,10 +106,10 @@ const MSG = {
       '  /breathe help             αυτός ο οδηγός',
       '',
       'ΡΥΘΜΙΣΕΙΣ                    τώρα          προεπιλογή',
-      `  /breathe limit 0–10       ${pad(h.limit + '/ημέρα', 13)} 4/ημέρα (0 = καμία αυτόματη)`,
-      `  /breathe lang el|en|auto  ${pad(h.lang, 13)} auto (ακολουθεί τη γλώσσα που γράφεις)`,
-      `  /breathe signals on|off   ${pad(h.signals ? 'on' : 'off', 13)} off`,
-      `  /breathe ai on|off        ${pad(h.ai, 13)} off (θέλει τη συναίνεσή σου)`,
+      `  /breathe limit 0–10       ${pad(info.limit + '/ημέρα', 13)} 4/ημέρα (0 = καμία αυτόματη)`,
+      `  /breathe lang el|en|auto  ${pad(info.lang, 13)} auto (ακολουθεί τη γλώσσα που γράφεις)`,
+      `  /breathe signals on|off   ${pad(info.signals ? 'on' : 'off', 13)} off`,
+      `  /breathe ai on|off        ${pad(info.ai, 13)} off (θέλει τη συναίνεσή σου)`,
       '',
       'ΤΙ ΓΙΝΕΤΑΙ ΜΟΝΟ ΤΟΥ',
       '  Μετά από 90 λεπτά ενεργής δουλειάς, μια κάρτα πάνω από το prompt προτείνει διάλειμμα.',
@@ -124,7 +124,7 @@ const MSG = {
       'ΕΛΕΓΧΟΣ ΜΕ AI (ai)',
       '  Προαιρετικός. Πριν από μια κάρτα τριβής, έως 5 πρόσφατα μηνύματα πάνε στο Claude Haiku για',
       '  επιβεβαίωση, μέσα από τη σύνδεση του Claude Code. Δεν αποθηκεύεται τίποτα.',
-      `  ${h.isEnterprise ? 'Σε αυτό το περιβάλλον είναι κλειδωμένος (profile: enterprise).' : 'Γράψε /breathe ai on για να δεις τι ακριβώς κάνει πριν συμφωνήσεις.'}`,
+      `  ${info.isEnterprise ? 'Σε αυτό το περιβάλλον είναι κλειδωμένος (profile: enterprise).' : 'Γράψε /breathe ai on για να δεις τι ακριβώς κάνει πριν συμφωνήσεις.'}`,
       '',
       'ΣΤΟ PANEL   1–6 κατηγορία · Tab μετακίνηση · Enter επιλογή · «Η έρευνα» δείχνει τη μελέτη',
       '',
@@ -155,7 +155,7 @@ const MSG = {
     unknown: (w: string) => `Δεν αναγνωρίζω το «${w}». Γράψε /breathe help για τις επιλογές.`,
   },
   en: {
-    help: (h: HelpInfo) => [
+    help: (info: HelpInfo) => [
       'Dalvì Interlude · small, research-backed breaks of 1–5 minutes',
       '',
       'COMMANDS',
@@ -166,10 +166,10 @@ const MSG = {
       '  /breathe help             this guide',
       '',
       'SETTINGS                     now           default',
-      `  /breathe limit 0–10       ${pad(h.limit + '/day', 13)} 4/day (0 = no automatic cards)`,
-      `  /breathe lang el|en|auto  ${pad(h.lang, 13)} auto (follows the language you write in)`,
-      `  /breathe signals on|off   ${pad(h.signals ? 'on' : 'off', 13)} off`,
-      `  /breathe ai on|off        ${pad(h.ai, 13)} off (asks for your consent)`,
+      `  /breathe limit 0–10       ${pad(info.limit + '/day', 13)} 4/day (0 = no automatic cards)`,
+      `  /breathe lang el|en|auto  ${pad(info.lang, 13)} auto (follows the language you write in)`,
+      `  /breathe signals on|off   ${pad(info.signals ? 'on' : 'off', 13)} off`,
+      `  /breathe ai on|off        ${pad(info.ai, 13)} off (asks for your consent)`,
       '',
       'WHAT HAPPENS ON ITS OWN',
       '  After 90 minutes of active work, a card above the prompt suggests a break.',
@@ -184,7 +184,7 @@ const MSG = {
       'AI CHECK (ai)',
       '  Optional. Before a friction card, up to 5 recent messages go to Claude Haiku to confirm,',
       '  through Claude Code\'s own connection. Nothing is stored.',
-      `  ${h.isEnterprise ? 'Locked in this environment (profile: enterprise).' : 'Type /breathe ai on to see exactly what it does before you agree.'}`,
+      `  ${info.isEnterprise ? 'Locked in this environment (profile: enterprise).' : 'Type /breathe ai on to see exactly what it does before you agree.'}`,
       '',
       'IN THE PANEL   1–6 category · Tab move · Enter select · "The research" shows the study',
       '',
@@ -276,10 +276,10 @@ async function loadHistory($: EngineInterface): Promise<History> {
 }
 
 async function noteOffered($: EngineInterface, a: Action, now: number): Promise<void> {
-  const h = await loadHistory($)
+  const hist = await loadHistory($)
   await $.store.set('history', {
-    offeredAt: { ...h.offeredAt, [a.id]: now },
-    categoryAt: { ...h.categoryAt, [a.category]: now },
+    offeredAt: { ...hist.offeredAt, [a.id]: now },
+    categoryAt: { ...hist.categoryAt, [a.category]: now },
   })
 }
 

@@ -248,6 +248,18 @@ spec/                        source of truth
 tests/                       45 tests, run against the Claude Code engine
 ```
 
+### Events the mod hooks
+
+Everything the mod does happens in these Claude Code events. Nothing else is intercepted, rewritten or blocked.
+
+| Event | What the mod does there |
+|---|---|
+| `session.start` | Registers `/breathe` and sets the language from your settings or your computer's locale |
+| `prompt.submit` | **Reads only, never changes or blocks the prompt.** Notes the time (for active-work time); if signals are on, looks for friction cues; if the AI check is on, keeps the last 5 typed prompts in memory; if language is `auto`, detects Greek or English. Skips slash commands and prompts that aren't yours. Then passes the prompt on unchanged |
+| `turn.complete` | After Claude finishes, decides whether to show a suggestion card (all gates, friction, optional AI check) |
+| `command.run` (`/breathe` only) | Answers `/breathe` and its settings |
+| `ui.render` (the card and the panel) | Draws the suggestion card above the prompt and the break panel |
+
 ### Design principles
 
 - **Spec first.** Content and rules live in `spec/`, and code is generated from or mirrors it. Writers edit `spec/ui-copy.yaml` and `spec/actions.yaml` without touching code.

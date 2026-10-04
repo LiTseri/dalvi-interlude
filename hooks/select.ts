@@ -32,8 +32,8 @@ const ZONE_PREFERS: Record<Zone, Category[]> = {
 const LEVEL_RANK = { A: 0, B: 1, C: 2 } as const
 
 const minutesOf = (hhmm: string): number => {
-  const [h = 0, m = 0] = hhmm.split(':').map(Number)
-  return h * 60 + m
+  const [hours = 0, mins = 0] = hhmm.split(':').map(Number)
+  return hours * 60 + mins
 }
 
 export const zoneAt = (minuteOfDay: number): Zone => {
