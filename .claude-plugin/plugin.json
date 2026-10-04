@@ -1,7 +1,8 @@
 {
   "name": "dalvi-interlude",
+  "displayName": "Dalvì Interlude",
   "version": "1.0.0",
-  "description": "Dalvì Interlude: small, research-backed breaks inside Claude Code. /breathe anytime, gentle suggestions after long stretches of work, optional friction-aware nudges.",
+  "description": "Small, research-backed breaks inside Claude Code: /breathe anytime, gentle suggestions after long stretches of work, and optional nudges when work gets stuck.",
   "types": "./types/index.d.ts",
   "author": {
     "name": "Princess M",
