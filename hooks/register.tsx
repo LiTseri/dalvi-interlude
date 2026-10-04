@@ -87,27 +87,48 @@ const T = {
   },
 }
 
+type HelpInfo = { limit: number; lang: string; signals: boolean; ai: string; isEnterprise: boolean }
+const pad = (v: string, n: number): string => (v.length >= n ? v : v + ' '.repeat(n - v.length))
+
 type StatusInfo = { limit: number; shown: number; isOffToday: boolean; activeMin: number; intervalMin: number; lang: string; snoozedMin: number; signals: boolean; ai: string }
 
 // Replies to /breathe subcommands, in the person's language.
 const MSG = {
   el: {
-    help: (limit: number) => [
-      'Dalvì Interlude · μικρά διαλείμματα με επιστημονική βάση',
+    help: (h: HelpInfo) => [
+      'Dalvì Interlude · μικρά διαλείμματα 1–5 λεπτών, με επιστημονική βάση',
       '',
-      '/breathe                 ένα διάλειμμα που ταιριάζει στην ώρα',
-      '/breathe <κατηγορία>     αναπνοή · κίνηση · νερό · μάτια · νους · κλείσιμο',
-      '/breathe limit <0–10>    αυτόματες προτάσεις την ημέρα (τώρα: ' + limit + ', 0 = καμία)',
-      '/breathe lang el|en|auto γλώσσα (auto: ακολουθεί τη γλώσσα που γράφεις)',
-      '/breathe signals on|off  προτάσεις όταν η δουλειά κολλάει (τοπικά, χωρίς αποθήκευση)',
-      '/breathe ai on|off       επιπλέον έλεγχος με AI για πιο σωστές προτάσεις (θέλει συναίνεση)',
-      '/breathe status          ρυθμίσεις και ενεργός χρόνος',
-      '/breathe preview         δείξε τώρα την κάρτα αυτόματης πρότασης',
-      '/breathe help            αυτός ο οδηγός',
+      'ΕΝΤΟΛΕΣ',
+      '  /breathe                  ένα διάλειμμα που ταιριάζει στην ώρα',
+      '  /breathe <κατηγορία>      αναπνοή · κίνηση · νερό · μάτια · νους · κλείσιμο',
+      '  /breathe status           οι ρυθμίσεις σου και ο ενεργός χρόνος',
+      '  /breathe preview          δες τώρα πώς φαίνεται η αυτόματη κάρτα',
+      '  /breathe help             αυτός ο οδηγός',
       '',
-      'Στο panel: 1–6 κατηγορία · Tab μετακίνηση · Enter επιλογή · «Η έρευνα» δείχνει την πηγή.',
-      'Αυτόματα: μετά από 90 λεπτά ενεργής δουλειάς, μόνο όταν το Claude δεν τρέχει κάτι.',
-      'Ιδιωτικότητα: τα μηνύματά σου δεν αποθηκεύονται ποτέ. Κρατιούνται μόνο ρυθμίσεις και μετρητές. Λεπτομέρειες: PRIVACY.md',
+      'ΡΥΘΜΙΣΕΙΣ                    τώρα          προεπιλογή',
+      `  /breathe limit 0–10       ${pad(h.limit + '/ημέρα', 13)} 4/ημέρα (0 = καμία αυτόματη)`,
+      `  /breathe lang el|en|auto  ${pad(h.lang, 13)} auto (ακολουθεί τη γλώσσα που γράφεις)`,
+      `  /breathe signals on|off   ${pad(h.signals ? 'on' : 'off', 13)} off`,
+      `  /breathe ai on|off        ${pad(h.ai, 13)} off (θέλει τη συναίνεσή σου)`,
+      '',
+      'ΤΙ ΓΙΝΕΤΑΙ ΜΟΝΟ ΤΟΥ',
+      '  Μετά από 90 λεπτά ενεργής δουλειάς, μια κάρτα πάνω από το prompt προτείνει διάλειμμα.',
+      '  Ποτέ όσο το Claude δουλεύει, ποτέ 20:00–08:00, το πολύ μία ανά 45 λεπτά.',
+      '  Μια παύση πάνω από 15 λεπτά μηδενίζει τον μετρητή.',
+      '',
+      'ΑΝΙΧΝΕΥΣΗ ΤΡΙΒΗΣ (signals)',
+      '  Αν η δουλειά κολλήσει, προτείνει διάλειμμα νωρίτερα. Το καταλαβαίνει από φράσεις όπως',
+      '  «ακόμα δεν δουλεύει» δύο φορές σε 10 λεπτά, ή «έχω κολλήσει», «κουράστηκαν τα μάτια μου».',
+      '  Διαβάζει μόνο ό,τι γράφεις εσύ, τοπικά. Αγνοεί κώδικα και παραθέσεις. Δεν αποθηκεύει κείμενο.',
+      '',
+      'ΕΛΕΓΧΟΣ ΜΕ AI (ai)',
+      '  Προαιρετικός. Πριν από μια κάρτα τριβής, έως 5 πρόσφατα μηνύματα πάνε στο Claude Haiku για',
+      '  επιβεβαίωση, μέσα από τη σύνδεση του Claude Code. Δεν αποθηκεύεται τίποτα.',
+      `  ${h.isEnterprise ? 'Σε αυτό το περιβάλλον είναι κλειδωμένος (profile: enterprise).' : 'Γράψε /breathe ai on για να δεις τι ακριβώς κάνει πριν συμφωνήσεις.'}`,
+      '',
+      'ΣΤΟ PANEL   1–6 κατηγορία · Tab μετακίνηση · Enter επιλογή · «Η έρευνα» δείχνει τη μελέτη',
+      '',
+      'Ιδιωτικότητα: τα μηνύματά σου δεν αποθηκεύονται ποτέ. Λεπτομέρειες στο PRIVACY.md.',
       'Δεν είναι ιατρική συμβουλή. Αν κάτι σε ενοχλεί, σταμάτα.',
     ].join('\n'),
     limitUsage: (n: number) => `Χρήση: /breathe limit 0–10 (τώρα: ${n})`,
@@ -134,22 +155,40 @@ const MSG = {
     unknown: (w: string) => `Δεν αναγνωρίζω το «${w}». Γράψε /breathe help για τις επιλογές.`,
   },
   en: {
-    help: (limit: number) => [
-      'Dalvì Interlude · small, research-backed breaks',
+    help: (h: HelpInfo) => [
+      'Dalvì Interlude · small, research-backed breaks of 1–5 minutes',
       '',
-      '/breathe                 a break that fits the time of day',
-      '/breathe <category>      breathing · movement · water · eyes · mind · closing',
-      '/breathe limit <0–10>    automatic suggestions per day (now: ' + limit + ', 0 = none)',
-      '/breathe lang el|en|auto language (auto follows the language you write in)',
-      '/breathe signals on|off  suggestions when work gets stuck (local, nothing stored)',
-      '/breathe ai on|off       an extra AI check for better-timed suggestions (needs consent)',
-      '/breathe status          settings and active time',
-      '/breathe preview         show the automatic suggestion card now',
-      '/breathe help            this guide',
+      'COMMANDS',
+      '  /breathe                  a break that fits the time of day',
+      '  /breathe <category>       breathing · movement · water · eyes · mind · closing',
+      '  /breathe status           your settings and active time',
+      '  /breathe preview          see what the automatic card looks like, now',
+      '  /breathe help             this guide',
       '',
-      'In the panel: 1–6 category · Tab move · Enter select · "The research" shows the source.',
-      'Automatic: after 90 minutes of active work, only while Claude is not running anything.',
-      'Privacy: your messages are never stored. Only settings and counters are kept. Details: PRIVACY.md',
+      'SETTINGS                     now           default',
+      `  /breathe limit 0–10       ${pad(h.limit + '/day', 13)} 4/day (0 = no automatic cards)`,
+      `  /breathe lang el|en|auto  ${pad(h.lang, 13)} auto (follows the language you write in)`,
+      `  /breathe signals on|off   ${pad(h.signals ? 'on' : 'off', 13)} off`,
+      `  /breathe ai on|off        ${pad(h.ai, 13)} off (asks for your consent)`,
+      '',
+      'WHAT HAPPENS ON ITS OWN',
+      '  After 90 minutes of active work, a card above the prompt suggests a break.',
+      '  Never while Claude is working, never 20:00–08:00, at most one every 45 minutes.',
+      '  A pause of more than 15 minutes resets the count.',
+      '',
+      'FRICTION SIGNALS (signals)',
+      '  When work gets stuck, a break is suggested sooner. It notices phrases such as',
+      '  "still fails" twice in 10 minutes, or "I\'m stuck", "my eyes are tired".',
+      '  It reads only what you type, on your machine. It skips code and quotes. No text is stored.',
+      '',
+      'AI CHECK (ai)',
+      '  Optional. Before a friction card, up to 5 recent messages go to Claude Haiku to confirm,',
+      '  through Claude Code\'s own connection. Nothing is stored.',
+      `  ${h.isEnterprise ? 'Locked in this environment (profile: enterprise).' : 'Type /breathe ai on to see exactly what it does before you agree.'}`,
+      '',
+      'IN THE PANEL   1–6 category · Tab move · Enter select · "The research" shows the study',
+      '',
+      'Privacy: your messages are never stored. Details in PRIVACY.md.',
       'Not medical advice. Stop if anything feels uncomfortable.',
     ].join('\n'),
     limitUsage: (n: number) => `Usage: /breathe limit 0–10 (now: ${n})`,
@@ -459,7 +498,7 @@ export const register: Register = (on, options) => {
     const M = MSG[L]
 
     if (word === 'help' || word === 'βοήθεια' || word === 'βοηθεια' || word === '?') {
-      return { text: M.help(s.maxPerDay) }
+      return { text: M.help({ limit: s.maxPerDay, lang: s.lang, signals: s.signals, ai: isEnterprise ? 'locked' : s.ai, isEnterprise }) }
     }
     if (word === 'limit' || word === 'όριο' || word === 'οριο') {
       const n = Math.round(Number(value))
