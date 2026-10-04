@@ -10,6 +10,9 @@
   },
   "homepage": "https://github.com/LiTseri/dalvi-interlude",
   "repository": "https://github.com/LiTseri/dalvi-interlude",
+  "documentationUrl": "https://github.com/LiTseri/dalvi-interlude#readme",
+  "privacyPolicyUrl": "https://github.com/LiTseri/dalvi-interlude/blob/main/PRIVACY.md",
+  "supportUrl": "https://github.com/LiTseri/dalvi-interlude/issues",
   "license": "MIT",
   "keywords": [
     "wellness",
