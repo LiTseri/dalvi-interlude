@@ -1,0 +1,119 @@
+# /breathe — Rules v1.2 · 2026-10-03
+# v1.2 DECISIONS (product owner): time-based nudges ON by default (max_per_day=4, obvious setting,
+# 0 allowed). Text analysis (local heuristics + Phase 2 LLM) is opt-in in `default`; LLM locked off in
+# `enterprise`. The manual-only rule moved from time_rules to selection.exclude_tags_for_automatic.
+# /breathe remains available in every configuration.
+# Time-based nudges and text analysis are SEPARATE settings.
+# Settings, today's counters and recent-suggestion history persist locally; prompts and inferences never do.
+# interval_min=90 is an adjustable product default, NOT a validated biological threshold.
+# Activity means intentional session activity, not an autonomous agent's wall-clock run.
+# never_during_tool_run also requires a stable turn boundary: do not surface between nested tools.
+# Unstarted queued nudges: coalesce to one, cancel on snooze/quiet hours/daily cap/opt-out.
+# local time, overnight quiet-hour wrap, DST and explicit shift-hours preferences must be implemented.
+# A prefer rule is a SOFT rank, never an instruction to end work or drink water.
+# Rank order: signal > time preference > category rotation > evidence within compatible category.
+# Rotation: least recently offered category first; then evidence; random tie-break only among equals.
+# selection.exclude_tags_for_automatic removes manual-only from recommendations. Explicit menu choices bypass ONLY that tag,
+# never physical compatibility or the user's request. Any-zone entries remain available in the menu.
+# Automatic fallback MUST pass all gates; otherwise no nudge. Never force an excluded action.
+# Explicit /breathe ignores reminder caps, quiet hours, snooze and automatic cooldown.
+# heuristics/signals_llm values: off | opt_in | on. opt_in = off until the user explicitly enables it.
+# UI language: explicit user preference > stable conversation language > supported device locale > en.
+# Supported authored languages: el/en; do not imply other translations exist.
+# No new schema keys: language choice is a host/UI preference, specified in BREATHE_DESIGN_NOTES.md.
+# Phase 2 LLM: opt_in in `default` (consent text in signals.yaml names the model and provider terms);
+# off and locked in `enterprise` until infosec/compliance approval.
+
+active_time:
+  idle_reset_min: 15
+nudges:
+  interval_min: 90
+  max_per_day: 4
+  max_per_day_range:
+  - 0
+  - 10
+  user_configurable: true
+  never_during_tool_run: true
+  snooze_options_min:
+  - 15
+  - 30
+  - 60
+  min_gap_between_nudges_min: 45
+  quiet_hours:
+    from: '20:00'
+    to: 08:00
+    user_configurable: true
+time_of_day:
+  morning: 06:00-11:59
+  midday: 12:00-14:59
+  afternoon: 15:00-18:59
+  evening: 19:00-05:59
+time_rules:
+- id: morning-open-window
+  when:
+    zone: morning
+  prefer_categories:
+  - movement
+  - eyes
+  rationale: Ήπιο preset, όχι βιολογική υπεροχή πρωινού. Προτιμά μικρή κίνηση ή αλλαγή βλέμματος· δεν συμπεραίνει
+    πώς αισθάνεται ο χρήστης.
+- id: midday-change-scene
+  when:
+    zone: midday
+  prefer_categories:
+  - movement
+  rationale: 'Contextual preset: ίσως βολεύει μια μικρή βόλτα. Dunstan 2012, DOI 10.2337/dc11-1931, μελέτησε επαναλαμβανόμενη
+    κίνηση μετά γεύμα· η ώρα 12:00 δεν αποδεικνύει ότι ο χρήστης έφαγε.'
+- id: afternoon-small-and-quiet
+  when:
+    zone: afternoon
+  prefer_categories:
+  - eyes
+  - mind
+  rationale: 'Preset επιλογής, χωρίς υπόθεση απογευματινής κόπωσης. Η βάση μικρών διαλειμμάτων είναι γενική: Albulescu
+    2022, DOI 10.1371/journal.pone.0272460· δεν τεκμηριώνει συγκεκριμένη ώρα.'
+- id: no-caffeine-afternoon
+  when:
+    after: '14:00'
+  exclude_tags:
+  - caffeine
+  rationale: 'Δεν υπάρχει action καφεΐνης στην v1. Μελλοντικό συντηρητικό preset: Drake 2013, DOI 10.5664/jcsm.3170,
+    n=12, 400 mg έως 6 ώρες πριν ύπνο. Δεν τεκμηριώνει καθολικό όριο 14:00 ή ότι μικρότερη δόση νωρίτερα είναι
+    ασφαλής για ύπνο.'
+- id: evening-shutdown
+  when:
+    zone: evening
+  prefer_categories:
+  - shutdown
+  rationale: 'Μόνο ήπια προτίμηση αν ο χρήστης επιλέγει τέλος εργασίας· 19:00 δεν σημαίνει τέλος βάρδιας. Wendsche
+    2017, DOI 10.3389/fpsyg.2016.02072: συσχετίσεις αποσύνδεσης/ανάκαμψης, όχι δοκιμή αυτού του preset. Αλλιώς
+    διατηρούνται μη-shutdown επιλογές.'
+- id: evening-no-sleep-promise
+  when:
+    zone: evening
+  exclude_tags:
+  - caffeine
+  rationale: 'Καμία πρόταση διεγερτικού το βράδυ. Το bedtime action παραμένει manual-only: Scullin 2018, DOI 10.1037/xge0000374,
+    αφορά αμέσως πριν ύπνο και όχι οποιαδήποτε βραδινή ώρα.'
+selection:
+  order:
+  - filter_time_of_day
+  - apply_time_rules
+  - filter_cooldown
+  - prefer_signal_match
+  - rotate
+  - prefer_higher_evidence
+  fallback_action_id: unplanned-pause
+  exclude_tags_for_automatic:
+  - manual-only
+  exclude_tags_for_automatic_rationale: 'Κανόνας προϊόντος (όχι κανόνας ώρας): οι απαιτητικές/ειδικές επιλογές
+    ανοίγουν μόνο με ρητή επιλογή χρήστη από το μενού /breathe, με έλεγχο καταλληλότητας. Ισχύει για κάθε αυτόματη
+    πρόταση και για το fallback.'
+profiles:
+  default:
+    signals_llm: opt_in
+    heuristics: opt_in
+  enterprise:
+    signals_llm: 'off'
+    signals_llm_locked: true
+    heuristics: opt_in

@@ -1,0 +1,70 @@
+# Dalvì Interlude · UI copy (card, buttons, moments, evidence labels). Edit here, then: python3 build-catalog.py
+# Keep {minutes} in snoozed.
+
+card_messages:
+  long_session:
+    el: Δουλεύεις ώρα· πάμε για μια μικρή παύση;
+    en: Been working a while; ready for a little pause?
+  stuck:
+    el: Να αφήσουμε το θέμα λίγο στην άκρη;
+    en: Let this one rest for a moment?
+  frustrated:
+    el: Μια ανάσα πριν την επόμενη προσπάθεια;
+    en: A breather before the next try?
+  fatigued:
+    el: Λίγο μακριά από την οθόνη, αν θέλεις;
+    en: A little time away from the screen?
+buttons:
+  go:
+    el: Πάμε
+    en: Let’s begin
+  stop:
+    el: Σταματάμε εδώ
+    en: Stop here
+  other:
+    el: Άλλη ιδέα
+    en: Another idea
+  later:
+    el: Αργότερα
+    en: Later
+  no_more:
+    el: Όχι άλλο σήμερα
+    en: No more today
+  basis:
+    el: Η έρευνα
+    en: The research
+  close:
+    el: Κλείσιμο
+    en: Close
+moments:
+  done:
+    el: Το διάλειμμα τελείωσε· επιστρέφεις όποτε θέλεις.
+    en: Your break is over; come back whenever you like.
+  stopped:
+    el: Έγινε, το αφήνουμε εδώ.
+    en: Of course, we’ll leave it here.
+  snoozed:
+    el: Έγινε, η επόμενη πρόταση θα περιμένει {minutes} λεπτά.
+    en: Of course, the next suggestion will wait {minutes} minutes.
+  off_today:
+    el: Έγινε, οι αυτόματες προτάσεις σταματούν για σήμερα.
+    en: Of course, no more automatic suggestions today.
+  choose_snooze:
+    el: Σε πόση ώρα να ξαναπροτείνω;
+    en: When should I suggest another break?
+  pick:
+    el: Τι διάλειμμα θα σου άρεσε τώρα;
+    en: What kind of break sounds good?
+  none:
+    el: Αν θέλεις, αρκεί και λίγη ώρα μακριά από την οθόνη.
+    en: A little time away from the screen is an option too.
+evidence_labels:
+  A:
+    el: Ισχυρή τεκμηρίωση
+    en: Strong evidence
+  B:
+    el: Καλή τεκμηρίωση
+    en: Good evidence
+  C:
+    el: Πρώιμα ευρήματα
+    en: Early findings

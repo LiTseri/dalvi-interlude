@@ -1,0 +1,32 @@
+{
+  "name": "dalvi-interlude",
+  "version": "1.0.0",
+  "description": "Dalvì Interlude: small, research-backed breaks inside Claude Code. /breathe anytime, gentle suggestions after long stretches of work, optional friction-aware nudges.",
+  "types": "./types/index.d.ts",
+  "author": {
+    "name": "Princess M",
+    "url": "https://github.com/LiTseri"
+  },
+  "homepage": "https://github.com/LiTseri/dalvi-interlude",
+  "repository": "https://github.com/LiTseri/dalvi-interlude",
+  "license": "MIT",
+  "keywords": [
+    "wellness",
+    "breaks",
+    "breathing",
+    "mods",
+    "wellbeing"
+  ],
+  "userConfig": {
+    "profile": {
+      "type": "string",
+      "title": "Profile",
+      "description": "default: AI-assisted friction check is available (opt-in). enterprise: the AI check is locked off.",
+      "default": "default",
+      "options": [
+        "default",
+        "enterprise"
+      ]
+    }
+  }
+}

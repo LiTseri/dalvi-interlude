@@ -1,0 +1,183 @@
+# /breathe — Signals v1.2 · 2026-10-03
+# v1.2: patterns are short cue phrases (whole-sentence patterns would almost never match real prompts).
+# Two layers: (1) local heuristics = cheap, deterministic cues + counts; (2) Phase 2 LLM (opt-in, default
+# profile only) = the nuanced judgement (same goal, negation, irony) that regex cannot do reliably.
+# Without the LLM, heuristics stay conservative: 2 cues across separate prompts before any nudge.
+# All analysis is opt-in. No biometric/emotion diagnosis.
+# Apply common guards BEFORE every heuristic: newest direct first-person user prose only.
+# Exclude fenced code, logs, pasted documents, quotations, tool/assistant text, hypotheticals,
+# educational examples, negated phrases, reported speech and successful progress.
+# Lowercase, Unicode normalization, Greek accent-insensitive comparison, word boundaries.
+# Patterns are cue phrases matched on word boundaries; they are never enough on their own (see above).
+# If context/negation is unclear, abstain.
+# stuck/frustrated: need 2 eligible cues across separate prompts in 10 minutes;
+# one explicit first-person blockage/frustration report may qualify, never a quoted phrase.
+# fatigued: explicit current first-person self-report only; do not infer health or sleepiness.
+# Only one nudge candidate per safe turn boundary; priority: self-report > stuck > long_session.
+# Local RAM keeps minimal flags/counts/timestamps; no raw-message buffer for v1 heuristics.
+# On idle-reset/opt-out/end-of-session, clear friction flags; no analytics or persistent history.
+# Explicit successful progress (e.g. 'τώρα δουλεύει', 'fixed now') clears friction flags
+# and cancels pending friction nudges; cancellation is a guard, not a signal-producing heuristic.
+# The natural-language rules require implementation; a generic patterns-only parser is insufficient.
+# Keep focused/unclear in Phase 2 schema but emit NO nudge for them.
+# confidence=0.7 is not validated calibration and is not a replacement for consent/gates.
+# The LLM is called ONLY when a heuristic is already active and the profile + user consent allow it.
+# Voice review v1.1: invitation copy only; heuristic rules and privacy requirements preserved.
+# v1.0 (shipped): pattern lists mirror hooks/signals.ts; consent text mirrors hooks/register.tsx. Keep them in sync.
+
+heuristics:
+- id: retry_loop
+  rule: Τοπικά, ≥3 prompts σε 10 λεπτά ΚΑΙ ≥2 από αυτά περιέχουν cue των unchanged_failure ή explicit_blocker. Μόνο
+    προσωρινά flags και χρονοσημεία στη RAM. Το «ίδιος στόχος» το κρίνει μόνο το LLM, αν είναι ενεργό.
+  maps_to: stuck
+- id: rapid_fire
+  rule: ≥5 prompts σε 3 λεπτά ΚΑΙ cue αποτυχίας (unchanged_failure ή explicit_blocker) σε ≥2 prompts. Η συχνότητα
+    μόνη της δεν ενεργοποιεί ποτέ υπενθύμιση. Κάθε prompt συνεισφέρει μία φορά.
+  maps_to: stuck
+- id: friction_words
+  patterns:
+    el:
+    - με εκνευρίζει
+    - έχω εκνευριστεί
+    - δεν αντέχω άλλο
+    - με έχει τρελάνει
+    - έχω τρελαθεί
+    en:
+    - so frustrating
+    - i'm frustrated
+    - i am frustrated
+    - can't stand this
+    - driving me crazy
+  maps_to: frustrated
+- id: long_session
+  rule: Ενεργός χρόνος ≥ nudges.interval_min, μόνο με opt-in χρονικών υπενθυμίσεων και πλήρη έλεγχο όλων των nudges
+    gates. Ένας timer δεν ταξινομεί κόπωση.
+  maps_to: long_session
+- id: unchanged_failure
+  patterns:
+    el:
+    - ακόμα δεν δουλεύει
+    - πάλι δεν δουλεύει
+    - ακόμα δεν δούλεψε
+    - ίδιο σφάλμα
+    - ίδιο λάθος
+    - δεν άλλαξε τίποτα
+    en:
+    - still not working
+    - still doesn't work
+    - still does not work
+    - still fails
+    - still failing
+    - still broken
+    - same error
+    - nothing changed
+  maps_to: stuck
+- id: explicit_blocker
+  patterns:
+    el:
+    - έχω κολλήσει
+    - κόλλησα
+    - δεν ξέρω τι άλλο να
+    - τίποτα δεν δούλεψε
+    - καμία λύση δεν
+    en:
+    - i'm stuck
+    - i am stuck
+    - don't know what else to
+    - do not know what else to
+    - nothing worked
+    - none of the fixes
+  maps_to: stuck
+- id: rejected_revision
+  rule: ΜΟΝΟ με ενεργό Phase 2. ≥2 διαδοχικά prompts απορρίπτουν ρητά αλλαγή στο ίδιο ζητούμενο ως μη λειτουργική.
+    Δεν μετρούν προτιμήσεις ύφους, συνηθισμένο debugging, διδακτικά παραδείγματα ή επιτυχημένη πρόοδος. Χωρίς LLM
+    δεν κρίνεται αξιόπιστα, οπότε δεν ενεργοποιείται.
+  maps_to: stuck
+- id: self_reported_fatigue
+  patterns:
+    el:
+    - κουράστηκαν τα μάτια μου
+    - δεν μπορώ να συγκεντρωθώ
+    - χρειάζομαι διάλειμμα
+    - έχω κουραστεί
+    - είμαι κουρασμένη
+    - είμαι κουρασμένος
+    en:
+    - my eyes are tired
+    - my eyes feel tired
+    - can't focus
+    - cannot focus
+    - need a break
+    - i'm tired
+    - i am tired
+    - i'm exhausted
+  maps_to: fatigued
+llm:
+  model: claude-haiku-4-5
+  trigger: Phase 2, opt-in in the default profile (/breathe ai on + agree), locked off in enterprise. Runs only
+    when a local heuristic already found friction; confirms or drops it. Never bypasses nudge gates. If the model
+    is unreachable, the local signal stands.
+  window: last_5_user_prompts
+  output_schema:
+    state:
+    - focused
+    - stuck
+    - frustrated
+    - fatigued
+    - unclear
+    confidence: 0.0-1.0
+  act_if_confidence_gte: 0.7
+  store_result: false
+  consent_text:
+    el: 'Αν το ενεργοποιήσεις: όταν φαίνεται ότι η δουλειά κόλλησε, έως 5 πρόσφατα μηνύματά σου στέλνονται στο μοντέλο
+      Claude Haiku, μέσα από τον ίδιο λογαριασμό Claude που ήδη χρησιμοποιείς, για να κρίνει αν ταιριάζει ένα διάλειμμα.
+      Το εργαλείο δεν αποθηκεύει ούτε τα μηνύματα ούτε το αποτέλεσμα. Η Anthropic επεξεργάζεται το αίτημα όπως κάθε
+      άλλο μήνυμά σου, σύμφωνα με τους όρους της.'
+    en: 'If you turn this on: when work seems stuck, up to 5 of your recent messages are sent to Claude Haiku, through
+      the same Claude account you already use, to judge whether a break fits. This tool stores neither the messages
+      nor the result. Anthropic processes the request like any other message of yours, under its own terms.'
+mapping:
+  stuck:
+  - movement
+  - mind
+  frustrated:
+  - breathing
+  - mind
+  fatigued:
+  - eyes
+  - movement
+  - hydration
+  long_session:
+  - movement
+  - eyes
+  - mind
+  - hydration
+messages:
+  stuck:
+    el: Να αφήσουμε το θέμα λίγο στην άκρη;
+    en: Let this one rest for a moment?
+  frustrated:
+    el: Μια ανάσα πριν την επόμενη προσπάθεια;
+    en: A breather before the next try?
+  fatigued:
+    el: Λίγο μακριά από την οθόνη, αν θέλεις;
+    en: A little time away from the screen?
+  long_session:
+    el: Δουλεύεις ώρα· πάμε για μια μικρή παύση;
+    en: Been working a while; ready for a little pause?
+success_clears:
+  el:
+  - τώρα δουλεύει
+  - δουλεύει τώρα
+  - λύθηκε
+  - διορθώθηκε
+  - δούλεψε
+  - τέλεια
+  en:
+  - works now
+  - it works
+  - fixed now
+  - that worked
+  - that fixed it
+  - solved
+  - perfect
