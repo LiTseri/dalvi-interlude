@@ -1,26 +1,28 @@
-# /breathe — Research catalogue v1.2 · 2026-10-03
-# v1.2: independent DOI/finding check (all 20 DOIs real and matching); corrections applied to Balban
-# (4 arms), Talens-Estarelles (effect faded after reminders stopped), Toussaint (other arms also helped),
-# Lee (147 analysed); small-walking-loop claim in plain language; tomorrow-starts-here auto-eligible.
-# 20 actions. Same field structure as the supplied template.
-# Evidence level concerns the claim and transfer to THIS action, not just the source type.
-# A = synthesis with a supported general claim; B = relevant controlled trial;
-# C = limited, indirect, conflicting, or materially adapted evidence. C is visible as such.
-# verified=true means publication identity/DOI and reported finding checked against a primary record;
-# it does NOT mean the mod, this exact UI, or this exact micro-dose has been clinically validated.
-# n is the source sample, not necessarily the intervention arm; null means no verified aggregate.
-# Dose/frequency mismatches are in limitations. No guaranteed immediate benefit.
-# manual-only: explicit user choice; exclude from default recommendations and ALL automatic nudges.
-# needs-image/needs-audio: never request filesystem/media permissions or fetch content automatically.
-# Tags require implementation in the selector; these YAML files are content/specification, not a working mod.
-# guided_timer: user-controlled start/stop, reduced-motion mode, no mandatory screen-watching.
-# cooldown applies to automatic rotation; explicit /breathe can choose any compatible action again.
-# v1.3 (product owner): user-facing `claim` states what the research found, warmly, without the
-#   limitation clause. Limitations stay in evidence.sources[].limitations (spec only, never shown as a caveat).
-#   Claims must still never promise more than the finding (no "you will feel/perform better").
-# v1.4: titles, steps, claims, cautions from the creative copy review (2026-10-04); 5 claims kept warm per v1.3.
-# Voice review v1.1: natural el/en copy; research metadata, selection and durations preserved.
-# v1.0 release review: 2 claims reworded to the exact finding (20-20-20, slow breathing); Balban findings record the anxiety outcome.
+# Dalvì Interlude · research catalogue · v1.0.1
+#
+# The 20 breaks. `python3 build-catalog.py` turns this file into hooks/catalog.ts.
+#
+# Evidence levels (they rate the claim as applied to THIS break, not just the type of source):
+#   A  a synthesis that supports the general claim
+#   B  at least one relevant controlled trial
+#   C  limited, indirect or conflicting evidence, or a materially adapted practice (shown as "Early findings")
+#
+# Writing claims: `claim` says what the research found, warmly and plainly, never what will happen to
+# the reader ("participants reported…", not "you will feel…"). Study details, sample sizes and
+# limitations live in evidence.sources[] and are not shown as caveats in the UI.
+#
+# verified: true means the publication, its DOI and the reported finding were checked against a primary
+# record (all 20 DOIs, 2026-10). It does not mean this exact micro-break was clinically tested.
+# n is the source sample (not necessarily the arm used); null means no verified aggregate.
+#
+# Tags used by the selector (hooks/select.ts):
+#   manual-only   never suggested automatically or by a plain /breathe; opens when its category is chosen
+#   bedtime-only  offered only in the evening, even when its category is chosen
+# cooldown_min applies to automatic rotation; an explicit /breathe can offer any break again.
+# cautions: shown before the steps; an empty string means none.
+#
+# History: v1.2 independent DOI and finding check; v1.3 warm claims without limitation clauses;
+# v1.4 creative copy review; v1.0 release review of two claims; v1.0.1 header and blink title.
 
 actions:
 - id: cyclic-sighing
@@ -502,7 +504,7 @@ actions:
 - id: unhurried-blinks
   title:
     el: Κλείσε απαλά τα μάτια
-    en: A gentle blink
+    en: Gently close your eyes
   category: eyes
   duration_sec: 60
   ui: text
@@ -587,8 +589,8 @@ actions:
   - screen-free
   - no-task
   cautions:
-    el: '-'
-    en: '-'
+    el: ''
+    en: ''
   cooldown_min: 90
 - id: let-the-problem-rest
   title:
@@ -632,8 +634,8 @@ actions:
   - low-demand
   - adapted-protocol
   cautions:
-    el: '-'
-    en: '-'
+    el: ''
+    en: ''
   cooldown_min: 120
 - id: forty-seconds-of-green
   title:

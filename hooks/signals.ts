@@ -1,5 +1,6 @@
-// Friction signals from the person's own prose, mirroring spec/signals.yaml.
+// Friction signals from the person's own prose. The rules are described in spec/signals.yaml.
 // Pure functions: no `$`, no storage. Callers keep only cue kinds and timestamps.
+import { CUE_PHRASES, SUCCESS_PHRASES } from './signals-data'
 
 export type Cue = 'stuck_report' | 'unchanged_failure' | 'frustrated' | 'fatigued'
 export type Friction = 'stuck' | 'frustrated' | 'fatigued'
@@ -17,52 +18,39 @@ export const isFromPerson = (origin: { kind: string; asUser?: boolean } | undefi
   origin === undefined || origin.kind === 'composer' || origin.kind === 'bridge' ||
   (origin.kind === 'plugin' && origin.asUser === true)
 
-/** Lowercase, strip Greek accents, unify apostrophes, punctuation to spaces. */
+/**
+ * Lowercase, strip Greek accents, unify apostrophes; clause punctuation becomes a `|` token
+ * (so a negation in the previous sentence never reaches the next phrase), other punctuation spaces.
+ */
 export const normalize = (text: string): string =>
   ` ${text
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/\p{M}/gu, '')
     .replace(/[’‘`´]/g, "'")
-    .replace(/[^\p{L}\p{N}'\s]/gu, ' ')
+    .replace(/[.,;:!?…·\u037E\u0387]/g, ' | ')
+    .replace(/[^\p{L}\p{N}'|\s]/gu, ' ')
     .replace(/\s+/g, ' ')
     .trim()} `
 
 const norm = (list: string[]): string[] => list.map(p => normalize(p).trim())
 
-// signals.yaml → heuristics. Short cue phrases, matched on word boundaries.
+// Cue and success phrases come from spec/signals.yaml (hooks/signals-data.ts), matched on whole words.
 const PATTERNS: Record<Cue, string[]> = {
-  frustrated: norm([
-    'με εκνευρίζει', 'έχω εκνευριστεί', 'δεν αντέχω άλλο', 'με έχει τρελάνει', 'έχω τρελαθεί',
-    'so frustrating', "i'm frustrated", 'i am frustrated', "can't stand this", 'driving me crazy',
-  ]),
-  unchanged_failure: norm([
-    'ακόμα δεν δουλεύει', 'πάλι δεν δουλεύει', 'ακόμα δεν δούλεψε', 'ίδιο σφάλμα', 'ίδιο λάθος', 'δεν άλλαξε τίποτα',
-    'still not working', "still doesn't work", 'still does not work', 'still fails', 'still failing',
-    'still broken', 'same error', 'nothing changed',
-  ]),
-  stuck_report: norm([
-    'έχω κολλήσει', 'κόλλησα', 'δεν ξέρω τι άλλο να', 'τίποτα δεν δούλεψε', 'καμία λύση δεν',
-    "i'm stuck", 'i am stuck', "don't know what else to", 'do not know what else to', 'nothing worked',
-    'none of the fixes',
-  ]),
-  fatigued: norm([
-    'κουράστηκαν τα μάτια μου', 'δεν μπορώ να συγκεντρωθώ', 'χρειάζομαι διάλειμμα', 'έχω κουραστεί',
-    'είμαι κουρασμένη', 'είμαι κουρασμένος',
-    'my eyes are tired', 'my eyes feel tired', "can't focus", 'cannot focus', 'need a break', "i'm tired",
-    'i am tired', "i'm exhausted",
-  ]),
+  frustrated: norm([...CUE_PHRASES.frustrated]),
+  unchanged_failure: norm([...CUE_PHRASES.unchanged_failure]),
+  stuck_report: norm([...CUE_PHRASES.stuck_report]),
+  fatigued: norm([...CUE_PHRASES.fatigued]),
 }
 
 // Explicit progress clears friction ("τώρα δουλεύει", "fixed now").
-const SUCCESS = norm([
-  'τώρα δουλεύει', 'δουλεύει τώρα', 'λύθηκε', 'διορθώθηκε', 'δούλεψε', 'τέλεια',
-  'works now', 'it works', 'fixed now', 'that worked', 'that fixed it', 'solved', 'perfect',
-])
+const SUCCESS = norm([...SUCCESS_PHRASES])
 const NEGATION_BEFORE = norm(['δεν', 'όχι', 'μη', 'μην', 'not', "didn't", "doesn't", 'never', 'no'])
+// For friction cues only words that negate the phrase itself: "no, still fails" is still friction.
+const CUE_NEGATION = norm(['δεν', 'μη', 'μην', 'not', "don't", "didn't", "doesn't", 'never'])
 
 // Text that is about language rather than the person's own state: examples, quotes, drafts.
-const META = norm(['παράδειγμα', 'example', 'e g', 'για παράδειγμα', 'γράψε ένα μήνυμα', 'write a message', 'quote'])
+const META = norm(['παράδειγμα', 'example', 'e.g.', 'για παράδειγμα', 'γράψε ένα μήνυμα', 'write a message', 'quote'])
 
 /**
  * The person's own prose: code fences, inline code, quoted lines, quoted strings
@@ -78,16 +66,14 @@ export const ownProse = (text: string): string =>
     .join('\n')
     .replace(/"[^"\n]*"|«[^»\n]*»|“[^”\n]*”|'[^'\n]{6,}'/g, ' ')
 
-const has = (t: string, p: string): boolean => t.includes(` ${p} `)
-
-/** Whether `p` occurs in `t` without a negation word just before it. */
-const hasUnnegated = (t: string, p: string): boolean => {
+/** Whether `p` occurs in `t` without one of the `negations` just before it. */
+const hasUnnegated = (t: string, p: string, negations: string[] = NEGATION_BEFORE): boolean => {
   let from = 0
   for (;;) {
     const i = t.indexOf(` ${p} `, from)
     if (i === -1) return false
     const before = t.slice(Math.max(0, i - 12), i).trim().split(' ').pop() ?? ''
-    if (!NEGATION_BEFORE.includes(before)) return true
+    if (!negations.includes(before)) return true
     from = i + 1
   }
 }
@@ -98,7 +84,8 @@ export type Reading = { cues: Cue[]; isSuccess: boolean }
 export const readPrompt = (text: string): Reading => {
   const t = normalize(ownProse(text))
   if (META.some(m => t.includes(` ${m} `))) return { cues: [], isSuccess: false }
-  const cues = (Object.keys(PATTERNS) as Cue[]).filter(cue => PATTERNS[cue].some(p => has(t, p)))
+  // "I don't need a break" or «δεν χρειάζομαι διάλειμμα» is not a cue.
+  const cues = (Object.keys(PATTERNS) as Cue[]).filter(cue => PATTERNS[cue].some(p => hasUnnegated(t, p, CUE_NEGATION)))
   const isSuccess = cues.length === 0 && SUCCESS.some(p => hasUnnegated(t, p))
   return { cues, isSuccess }
 }
@@ -122,7 +109,7 @@ export const addReading = (cues: CueAt[], reading: Reading, now: number): CueAt[
   return [...cues.filter(c => now - c.at <= WINDOW_MS), ...reading.cues.map(cue => ({ cue, at: now }))]
 }
 
-// Phase 2 (signals.yaml → llm).
+// The optional AI check (signals.yaml → llm).
 export const LLM_SYSTEM = [
   'You read a few short messages a person sent to their coding assistant.',
   'Decide whether their WORK seems to be going smoothly or has hit friction.',

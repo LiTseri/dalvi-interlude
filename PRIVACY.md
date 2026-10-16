@@ -1,6 +1,6 @@
 # Privacy · Dalvì Interlude
 
-*Ελληνικά πιο κάτω.*
+*Last updated: 16 October 2026 (version 1.0.1). Ελληνικά πιο κάτω.*
 
 Dalvì Interlude is a Claude Code mod. It runs on your computer, inside Claude Code, with the same access Claude Code has. This page says exactly what it reads, keeps and sends.
 
@@ -36,7 +36,7 @@ No message text, no AI results and no inferred state are ever stored.
 The **AI check** is off by default. When you run `/breathe ai on`, the mod shows what it does and waits for `/breathe ai agree`. Then:
 
 - While it is on, your last 5 typed messages are held **in memory only**, in full.
-- Only when the local signals already suggest the work is stuck, those messages (with fenced code blocks, quotes and log-like lines removed, and each cut to 600 characters) are sent to **Claude Haiku**. Other pasted text, such as unfenced config or JSON, may be included, so keep secrets out of prompts as you would anyway.
+- Only when the local signals already suggest the work is stuck and a break could be shown, those messages (with fenced code blocks, quotes and log-like lines removed, and each cut to 600 characters) are sent to **Claude Haiku**. Other pasted text, such as unfenced config or JSON, may be included, so keep secrets out of prompts as you would anyway.
 - The request goes through **Claude Code's own connection and credentials**. The mod has no API key and no server of its own. It counts toward your own usage.
 - The model answers with one word about the work (for example "stuck" or "focused") and a confidence. The mod uses it to decide whether to show a card, then **discards it**.
 - Your provider (Anthropic, or your organisation's cloud provider such as Amazon Bedrock or Google Vertex AI) processes the request like any other message you send, under its terms and your account's settings.
@@ -45,7 +45,13 @@ The **AI check** is off by default. When you run `/breathe ai on`, the mod shows
 
 Turn it off anytime with `/breathe ai off`. This also clears the recent messages from memory.
 
-**Enterprise profile:** when the plugin's `profile` setting is `enterprise`, the AI check is locked off and can't be turned on.
+**Enterprise profile:** while the plugin's `profile` option is `enterprise` (any capitalisation or spacing), the AI check is locked off and can't be turned on. The option is a user setting; an organisation that wants the lock to hold should set it in settings it manages.
+
+## Deleting your data
+
+- `/breathe reset` deletes everything the mod keeps on your computer (settings, counters, history) and returns to the defaults.
+- `/breathe ai off` and `/breathe signals off` clear what is held in memory at once.
+- Memory is cleared anyway when Claude Code closes.
 
 ## Not medical advice
 
@@ -58,6 +64,8 @@ Issues and questions: https://github.com/LiTseri/dalvi-interlude/issues
 ---
 
 # Ιδιωτικότητα · Dalvì Interlude
+
+*Τελευταία ενημέρωση: 16 Οκτωβρίου 2026 (έκδοση 1.0.1).*
 
 Το Dalvì Interlude είναι mod του Claude Code. Τρέχει στον υπολογιστή σου, μέσα στο Claude Code, με την ίδια πρόσβαση που έχει το Claude Code.
 
@@ -76,14 +84,24 @@ Issues and questions: https://github.com/LiTseri/dalvi-interlude/issues
 
 ## Τι κρατά στον υπολογιστή σου
 
-Ρυθμίσεις, τους μετρητές της ημέρας, και ποια διαλείμματα προτάθηκαν πρόσφατα. Ποτέ κείμενο μηνυμάτων ή αποτελέσματα του AI. Το γιατί εμφανίστηκε μια κάρτα μένει μόνο στη μνήμη του mod, όχι σε κοινή κατάσταση που διαβάζουν άλλα plugins, και χάνεται στο τέλος της συνεδρίας.
+Ρυθμίσεις, τους μετρητές της ημέρας, και ποια διαλείμματα προτάθηκαν πρόσφατα. Ποτέ κείμενο μηνυμάτων ή αποτελέσματα του AI. Το `/breathe reset` τα σβήνει όλα. Το γιατί εμφανίστηκε μια κάρτα μένει μόνο στη μνήμη του mod, όχι σε κοινή κατάσταση που διαβάζουν άλλα plugins, και χάνεται στο τέλος της συνεδρίας.
 
 ## Τι στέλνει, μόνο αν το επιλέξεις
 
-Όσο είναι ενεργό, τα 5 τελευταία μηνύματα που γράφεις κρατιούνται **μόνο στη μνήμη**, ολόκληρα. Όταν τα τοπικά σήματα δείχνουν ήδη ότι η δουλειά κόλλησε, στέλνονται στο **Claude Haiku** (χωρίς μπλοκ κώδικα σε ```, παραθέσεις και γραμμές log, έως 600 χαρακτήρες το καθένα· άλλο επικολλημένο κείμενο, π.χ. config ή JSON χωρίς ```, μπορεί να περιλαμβάνεται), μέσα από τη σύνδεση και τα διαπιστευτήρια του ίδιου του Claude Code, και μετράνε στη δική σου χρήση. Η απάντηση χρησιμοποιείται για μία απόφαση και **πετιέται**. Ο πάροχός σου (η Anthropic ή ο cloud πάροχος του οργανισμού σου) επεξεργάζεται το αίτημα όπως κάθε άλλο μήνυμά σου, με τους δικούς του όρους. Διαβάζονται μόνο μηνύματα που γράφεις εσύ (στο terminal ή από δικό σου απομακρυσμένο client), ποτέ headless `claude -p`/SDK, μηνύματα από κανάλια ή άλλες συνεδρίες, προγραμματισμένα prompts ή prompts άλλων plugins. Το άνοιγμα του ελέγχου AI ανοίγει και τις τοπικές ενδείξεις τριβής· το κλείσιμο των ενδείξεων κλείνει και τον έλεγχο AI. Το κλείνεις όποτε θέλεις με `/breathe ai off`.
+Όσο είναι ενεργό, τα 5 τελευταία μηνύματα που γράφεις κρατιούνται **μόνο στη μνήμη**, ολόκληρα. Όταν τα τοπικά σήματα δείχνουν ήδη ότι η δουλειά κόλλησε και μπορεί να εμφανιστεί διάλειμμα, στέλνονται στο **Claude Haiku** (χωρίς μπλοκ κώδικα σε ```, παραθέσεις και γραμμές log, έως 600 χαρακτήρες το καθένα· άλλο επικολλημένο κείμενο, π.χ. config ή JSON χωρίς ```, μπορεί να περιλαμβάνεται), μέσα από τη σύνδεση και τα διαπιστευτήρια του ίδιου του Claude Code, και μετράνε στη δική σου χρήση. Η απάντηση χρησιμοποιείται για μία απόφαση και **πετιέται**. Ο πάροχός σου (η Anthropic ή ο cloud πάροχος του οργανισμού σου) επεξεργάζεται το αίτημα όπως κάθε άλλο μήνυμά σου, με τους δικούς του όρους. Διαβάζονται μόνο μηνύματα που γράφεις εσύ (στο terminal ή από δικό σου απομακρυσμένο client), ποτέ headless `claude -p`/SDK, μηνύματα από κανάλια ή άλλες συνεδρίες, προγραμματισμένα prompts ή prompts άλλων plugins. Το άνοιγμα του ελέγχου AI ανοίγει και τις τοπικές ενδείξεις τριβής· το κλείσιμο των ενδείξεων κλείνει και τον έλεγχο AI. Το κλείνεις όποτε θέλεις με `/breathe ai off`.
 
-**Profile `enterprise`:** ο έλεγχος AI είναι κλειδωμένος κλειστός.
+**Profile `enterprise`:** όσο η ρύθμιση `profile` είναι `enterprise` (με κεφαλαία ή μικρά, με ή χωρίς κενά), ο έλεγχος AI είναι κλειδωμένος κλειστός. Είναι ρύθμιση χρήστη· ένας οργανισμός που θέλει να μένει κλειδωμένη τη ρυθμίζει από τις ρυθμίσεις που διαχειρίζεται.
+
+## Διαγραφή των δεδομένων σου
+
+- Το `/breathe reset` σβήνει ό,τι κρατά το mod στον υπολογιστή σου (ρυθμίσεις, μετρητές, ιστορικό) και επιστρέφει στις προεπιλογές.
+- Τα `/breathe ai off` και `/breathe signals off` καθαρίζουν αμέσως ό,τι κρατιέται στη μνήμη.
+- Η μνήμη καθαρίζει ούτως ή άλλως όταν κλείνει το Claude Code.
 
 ## Δεν είναι ιατρική συμβουλή
 
 Τα διαλείμματα είναι σύντομα, προαιρετικά και βασίζονται σε δημοσιευμένη έρευνα. Δεν είναι θεραπεία για καμία πάθηση.
+
+## Επικοινωνία
+
+Ερωτήσεις και προβλήματα: https://github.com/LiTseri/dalvi-interlude/issues

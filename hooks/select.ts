@@ -2,6 +2,7 @@
 // No `$` here, so every rule is unit-testable.
 import type { Action, Category, Lang, Signal, Zone } from '../types'
 import { UI_COPY } from './copy'
+import { SIGNAL_MAPPING } from './signals-data'
 
 export const RULES = {
   idleResetMin: 15,
@@ -13,13 +14,8 @@ export const RULES = {
   quietHours: { from: '20:00', to: '08:00' },
 }
 
-/** signals.yaml → mapping: signal → preferred categories, in order. */
-export const SIGNAL_CATEGORIES: Record<Signal, Category[]> = {
-  stuck: ['movement', 'mind'],
-  frustrated: ['breathing', 'mind'],
-  fatigued: ['eyes', 'movement', 'hydration'],
-  long_session: ['movement', 'eyes', 'mind', 'hydration'],
-}
+/** spec/signals.yaml → mapping: signal → preferred categories, in order. */
+export const SIGNAL_CATEGORIES: Record<Signal, readonly Category[]> = SIGNAL_MAPPING
 
 /** rules.yaml → time_rules prefer_categories, per zone. */
 const ZONE_PREFERS: Record<Zone, Category[]> = {
@@ -178,7 +174,7 @@ export const shouldNudge = (g: NudgeGate): boolean => canNudge(g) && g.activeMs 
 /** UI language from the person's own prose: Greek letters outweighing Latin. */
 export const detectLang = (text: string): Lang | null => {
   const prose = text.replace(/```[\s\S]*?```/g, ' ').replace(/`[^`]*`/g, ' ')
-  const greek = (prose.match(/[Ͱ-Ͽἀ-῿]/g) ?? []).length
+  const greek = (prose.match(/[\u0370-\u03FF\u1F00-\u1FFF]/g) ?? []).length
   const latin = (prose.match(/[a-zA-Z]/g) ?? []).length
   if (greek + latin < 12) return null
   return greek >= latin ? 'el' : 'en'

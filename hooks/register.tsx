@@ -1,11 +1,12 @@
 // Dalvì Interlude — small, research-backed breaks inside Claude Code. Command: /breathe
-// v1.0: /breathe, time-based suggestions, opt-in friction signals, opt-in AI check (Phase 2).
+// /breathe, time-based suggestions, opt-in local friction signals, and an opt-in AI check.
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type { Action, Card, Category, Lang, PaneView, Signal } from '../types'
 import { ACTIONS } from './catalog'
 import { UI_COPY } from './copy'
+import { AI_CONSENT } from './signals-data'
 import {
   LEVEL_LABEL,
   RULES,
@@ -53,7 +54,6 @@ const CATEGORY_ALIASES: Record<string, Category> = {
   shutdown: 'shutdown', closing: 'shutdown', κλείσιμο: 'shutdown', κλεισιμο: 'shutdown',
 }
 
-// signals.yaml → messages
 // Card messages, buttons and moments come from spec/ui-copy.yaml (hooks/copy.ts).
 const MESSAGE: Record<Lang, Record<string, string>> = {
   el: Object.fromEntries(Object.entries(UI_COPY.card_messages).map(([k, v]) => [k, v.el])),
@@ -87,6 +87,14 @@ const T = {
   },
 }
 
+// How a setting's state reads in Greek, agreeing with its noun; English shows the command words themselves.
+const EL_SIGNALS: Record<string, string> = { on: 'ενεργές', off: 'ανενεργές' }
+const EL_AI: Record<string, string> = { on: 'ενεργός', off: 'ανενεργός', pending: 'περιμένει συναίνεση', locked: 'κλειδωμένος' }
+const EL_LANG: Record<string, string> = { auto: 'αυτόματη', el: 'el', en: 'en' }
+const elSignals = (isOn: boolean): string => EL_SIGNALS[isOn ? 'on' : 'off'] ?? ''
+const elAi = (v: string): string => EL_AI[v] ?? v
+const elLang = (v: string): string => EL_LANG[v] ?? v
+
 type HelpInfo = { limit: number; lang: string; signals: boolean; ai: string; isEnterprise: boolean }
 const pad = (v: string, n: number): string => (v.length >= n ? v : v + ' '.repeat(n - v.length))
 
@@ -104,12 +112,13 @@ const MSG = {
       '  /breathe status           οι ρυθμίσεις σου και ο ενεργός χρόνος',
       '  /breathe preview          δες τώρα πώς φαίνεται η αυτόματη κάρτα',
       '  /breathe help             αυτός ο οδηγός',
+      '  /breathe reset            σβήνει ό,τι έχει κρατήσει (ρυθμίσεις, μετρητές, ιστορικό)',
       '',
       'ΡΥΘΜΙΣΕΙΣ                    τώρα          προεπιλογή',
       `  /breathe limit 0–10       ${pad(info.limit + '/ημέρα', 13)} 4/ημέρα (0 = καμία αυτόματη)`,
-      `  /breathe lang el|en|auto  ${pad(info.lang, 13)} auto (ακολουθεί τη γλώσσα που γράφεις)`,
-      `  /breathe signals on|off   ${pad(info.signals ? 'on' : 'off', 13)} off`,
-      `  /breathe ai on|off        ${pad(info.ai, 13)} off (θέλει τη συναίνεσή σου)`,
+      `  /breathe lang el|en|auto  ${pad(elLang(info.lang), 13)} αυτόματη (ακολουθεί τη γλώσσα που γράφεις)`,
+      `  /breathe signals on|off   ${pad(elSignals(info.signals), 13)} ανενεργές`,
+      `  /breathe ai on|off        ${pad(elAi(info.ai), 13)} ανενεργός (θέλει τη συναίνεσή σου)`,
       '',
       'ΤΙ ΓΙΝΕΤΑΙ ΜΟΝΟ ΤΟΥ',
       '  Μετά από 90 λεπτά ενεργής δουλειάς, μια κάρτα πάνω από το prompt προτείνει διάλειμμα.',
@@ -138,8 +147,8 @@ const MSG = {
     langSet: (v: string) => (v === 'auto' ? 'Γλώσσα: αυτόματα, ακολουθεί τη γλώσσα που γράφεις.' : v === 'el' ? 'Γλώσσα: Ελληνικά.' : 'Γλώσσα: English.'),
     status: (i: StatusInfo) => [
       `Όριο: ${i.limit} την ημέρα · εμφανίστηκαν σήμερα: ${i.shown}${i.isOffToday ? ' · κλειστό για σήμερα' : ''}`,
-      `Ενεργός χρόνος: ${i.activeMin}′ από ${i.intervalMin}′ · γλώσσα: ${i.lang}`,
-      `Τριβή: ${i.signals ? 'ενεργό' : 'ανενεργό'} · έλεγχος AI: ${i.ai}`,
+      `Ενεργός χρόνος: ${i.activeMin}′ από ${i.intervalMin}′ · γλώσσα: ${elLang(i.lang)}`,
+      `Ενδείξεις τριβής: ${elSignals(i.signals)} · έλεγχος AI: ${elAi(i.ai)}`,
       i.snoozedMin > 0 ? `Σε αναβολή για ${i.snoozedMin}′` : '',
     ].filter(Boolean).join('\n'),
     preview: 'Προεπισκόπηση της κάρτας αυτόματης πρότασης (δεν μετράει στο όριο).',
@@ -152,6 +161,7 @@ const MSG = {
     aiOff: 'Ο έλεγχος με AI απενεργοποιήθηκε. Τα πρόσφατα μηνύματα σβήστηκαν από τη μνήμη.',
     aiLocked: 'Ο έλεγχος με AI είναι κλειδωμένος σε αυτό το περιβάλλον (profile: enterprise).',
     aiNoPending: 'Γράψε πρώτα /breathe ai on για να δεις τι σημαίνει.',
+    reset: 'Έσβησα ό,τι είχα κρατήσει: ρυθμίσεις, μετρητές και ιστορικό. Όλα επέστρεψαν στις προεπιλογές.',
     unknown: (w: string) => `Δεν αναγνωρίζω το «${w}». Γράψε /breathe help για τις επιλογές.`,
   },
   en: {
@@ -164,6 +174,7 @@ const MSG = {
       '  /breathe status           your settings and active time',
       '  /breathe preview          see what the automatic card looks like, now',
       '  /breathe help             this guide',
+      '  /breathe reset            deletes everything it keeps (settings, counters, history)',
       '',
       'SETTINGS                     now           default',
       `  /breathe limit 0–10       ${pad(info.limit + '/day', 13)} 4/day (0 = no automatic cards)`,
@@ -212,6 +223,7 @@ const MSG = {
     aiOff: 'The AI check is off. Recent messages were cleared from memory.',
     aiLocked: 'The AI check is locked in this environment (profile: enterprise).',
     aiNoPending: 'Type /breathe ai on first to see what it means.',
+    reset: 'Deleted everything I kept: settings, counters and history. Everything is back to the defaults.',
     unknown: (w: string) => `I don't recognise "${w}". Type /breathe help for the options.`,
   },
 }
@@ -243,16 +255,6 @@ let isPersonTurn = false
 
 
 const aiAllowed = (s: Settings): boolean => !isEnterprise && s.ai === 'on'
-
-const AI_CONSENT = {
-  el: consentText('el'),
-  en: consentText('en'),
-}
-function consentText(l: Lang): string {
-  return l === 'el'
-    ? 'Αν το ενεργοποιήσεις: όταν φαίνεται ότι η δουλειά κόλλησε, έως 5 πρόσφατα μηνύματά σου (χωρίς τα μπλοκ κώδικα, έως 600 χαρακτήρες το καθένα) στέλνονται στο Claude Haiku, μέσα από την ίδια σύνδεση και τα ίδια διαπιστευτήρια που ήδη χρησιμοποιεί το Claude Code, για να κρίνει αν ταιριάζει ένα διάλειμμα. Μετράει στη δική σου χρήση. Ο πάροχος (η Anthropic ή ο cloud πάροχος του οργανισμού σου) το επεξεργάζεται όπως κάθε άλλο μήνυμά σου, με τους δικούς του όρους. Το εργαλείο δεν αποθηκεύει ούτε τα μηνύματα ούτε το αποτέλεσμα. Ενεργοποιούνται επίσης οι τοπικές ενδείξεις τριβής (/breathe signals).'
-    : 'If you turn this on: when work seems stuck, up to 5 of your recent messages (fenced code removed, up to 600 characters each) are sent to Claude Haiku, through the same connection and credentials Claude Code already uses, to judge whether a break fits. It counts toward your own usage. The provider (Anthropic, or your organisation\'s cloud provider) processes it like any other message of yours, under its own terms. This tool stores neither the messages nor the result. Local friction signals (/breathe signals) are turned on too.'
-}
 
 async function loadSettings($: EngineInterface): Promise<Settings> {
   const s = ((await $.store.get('settings')) ?? {}) as Partial<Settings>
@@ -409,49 +411,64 @@ async function frictionNow($: EngineInterface, s: Settings, now: number): Promis
   }
 }
 
+/** The language to show: the chosen one; with `auto`, the device locale until the person's own words show one. */
+async function applyLang($: EngineInterface, s: Settings): Promise<void> {
+  if (s.lang !== 'auto') {
+    await update($, lang, () => s.lang)
+    return
+  }
+  // An empty variable falls through to the next, as the C library does.
+  const locale = ((await $.env.get('LC_ALL')) || (await $.env.get('LC_MESSAGES')) || (await $.env.get('LANG')) || '').toLowerCase()
+  await update($, lang, (): Lang => (locale.startsWith('el') ? 'el' : 'en'))
+}
+
+/** Reads one submitted prompt: activity time, friction cues and language. Text is never stored. */
+async function notePrompt($: EngineInterface, e: { text: string; turnId?: string; origin?: unknown }): Promise<void> {
+  // Only the person's own prompts count: not headless runs, relays, peers, schedules or other plugins.
+  const isPerson = isFromPerson(e.origin as { kind: string; asUser?: boolean } | undefined)
+  // A prompt that starts a turn decides whose turn it is; one delivered into a running turn does not.
+  if (e.turnId === undefined) isPersonTurn = isPerson
+  if (!isPerson) return
+  const now = await $.clock.now()
+  activity = recordActivity(activity, now) // slash commands count as activity too (idle resets apply)
+  if (activity.activeMs === 0) {
+    cues = [] // idle reset clears friction too
+    recentPrompts = []
+  }
+  if (e.text.trimStart().startsWith('/')) return // commands are never read for signals or language
+  const s = await loadSettings($)
+  if (s.signals) {
+    cues = addReading(cues, readPrompt(e.text), now)
+    if (aiAllowed(s)) recentPrompts = [...recentPrompts, e.text].slice(-5)
+  }
+  if (s.lang === 'auto') {
+    const detected = detectLang(e.text) // used in memory only, never stored
+    if (detected) await update($, lang, () => detected)
+  }
+}
+
 export const register: Register = (on, options) => {
-  isEnterprise = options.profile === 'enterprise'
+  // Forgiving on case and spaces, so " Enterprise" still locks the AI check.
+  isEnterprise = String(options.profile ?? '').trim().toLowerCase() === 'enterprise'
 
   on('session.start', async ($, e, next) => {
     await $.command.register({
       name: 'breathe',
       description: 'Dalvì Interlude: a short, research-backed break',
-      argumentHint: '[category | help | status | limit 0–10 | lang el|en|auto | signals on|off | ai on|off]',
+      argumentHint: '[category | help | status | preview | limit 0–10 | lang el|en|auto | signals on|off | ai on|agree|off | reset]',
     })
-    const s = await loadSettings($)
-    if (s.lang !== 'auto') await update($, lang, () => s.lang)
-    else {
-      // Until the person's own words show a language: the device locale, else English.
-      const locale = ((await $.env.get('LC_ALL')) ?? (await $.env.get('LANG')) ?? '').toLowerCase()
-      await update($, lang, (): Lang => (locale.startsWith('el') ? 'el' : 'en'))
-    }
+    await applyLang($, await loadSettings($))
     return next(e)
   })
 
   on('prompt.submit', async ($, e, next) => {
-    // Only the person's own prompts count: not headless runs, relays, peers, schedules or other plugins.
-    const isPerson = isFromPerson(e.origin as { kind: string; asUser?: boolean } | undefined)
-    // A prompt that starts a turn decides whose turn it is; one delivered into a running turn does not.
-    if (e.turnId === undefined) isPersonTurn = isPerson
-    if (!isPerson) return next(e)
-    const now = await $.clock.now()
-    activity = recordActivity(activity, now) // slash commands count as activity too (idle resets apply)
-    if (activity.activeMs === 0) {
-      cues = [] // idle reset clears friction too
-      recentPrompts = []
-    }
-    if (e.text.trimStart().startsWith('/')) return next(e) // commands are never read for signals or language
-    const s = await loadSettings($)
-    if (s.signals) {
-      cues = addReading(cues, readPrompt(e.text), now)
-      if (aiAllowed(s)) recentPrompts = [...recentPrompts, e.text].slice(-5)
-    }
-    if (s.lang === 'auto') {
-      const detected = detectLang(e.text) // used in memory only, never stored
-      if (detected) await update($, lang, () => detected)
+    try {
+      await notePrompt($, e)
+    } catch {
+      // A break reminder must never stand between the person and their prompt.
     }
     return next(e)
-  })
+  }).catch(($, e, next) => next(e)) // even if the hook itself fails, the prompt goes on
 
   // A finished turn is the safe boundary: nothing runs, so a suggestion may wait above the prompt.
   on('turn.complete', async ($, e, next) => {
@@ -474,11 +491,16 @@ export const register: Register = (on, options) => {
       isOffToday: day.isOffToday, lastNudgeAt: day.lastNudgeAt,
     }
     if (!canNudge(gate)) return result
+    const hasCause = (s.signals && frictionFrom(cues, now) !== null) || shouldNudge(gate)
+    if (!hasCause) return result
+    // No break fits right now (time of day, rotation): stop before any model call is spent.
+    const history = await loadHistory($)
+    if (!pick({ actions: ACTIONS, now, minuteOfDay: minuteOfDay(now), signal: null, history, isAutomatic: true })) return result
     // Priority: friction the person reported or the work shows, then a long stretch of work.
     const friction = s.signals ? await frictionNow($, s, now) : null
     const reason = friction ?? (shouldNudge(gate) ? 'long_session' : null)
     if (reason === null) return result
-    const a = pick({ actions: ACTIONS, now, minuteOfDay: minuteOfDay(now), signal: reason, history: await loadHistory($), isAutomatic: true })
+    const a = pick({ actions: ACTIONS, now, minuteOfDay: minuteOfDay(now), signal: reason, history, isAutomatic: true })
     if (!a) return result // fallback never forces an excluded action
     await noteOffered($, a, now)
     await $.store.set('day', { ...day, shown: day.shown + 1, lastNudgeAt: now })
@@ -551,6 +573,14 @@ export const register: Register = (on, options) => {
         return { text: M.aiOff }
       }
       return { text: M.aiUsage }
+    }
+    if (word === 'reset' || word === 'επαναφορά' || word === 'επαναφορα') {
+      // Deletes every stored key and the module's memory: what PRIVACY.md calls deleting your data.
+      for (const key of await $.store.keys()) await $.store.delete(key)
+      cues = []; recentPrompts = []; activity = { lastActivityAt: null, activeMs: 0 }
+      await clearCard($)
+      await applyLang($, await loadSettings($))
+      return { text: MSG[await read($, lang)].reset }
     }
     if (word === 'preview') {
       // Shows the automatic card now, for review; counts nothing and records nothing.
@@ -628,6 +658,17 @@ export const register: Register = (on, options) => {
     )
   })
 
+  // However the pane closes (its button, the close key, an unload), the timer stops with it.
+  on('ui.close', { id: PANE }, async ($, e, next) => {
+    stopTimer()
+    try {
+      await update($, pane, () => null)
+    } catch {
+      // The pane closes regardless.
+    }
+    return next(e)
+  }).catch(($, e, next) => next(e)) // a failure here never keeps the pane open
+
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
     const { Box, Text, Button } = $.ui.resolve(e)
     const view: PaneView | null = await read($, pane)
@@ -663,7 +704,7 @@ export const register: Register = (on, options) => {
       )
     }
 
-    const hasCaution = a.cautions[L] !== '-'
+    const hasCaution = a.cautions[L].trim() !== '' && a.cautions[L] !== '-'
     return (
       <Box flexDirection="column" gap={1}>
         {categoryRow}

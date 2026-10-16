@@ -1,4 +1,4 @@
-// GENERATED from spec/actions.yaml by build-catalog. Do not edit by hand.
+// GENERATED from spec/actions.yaml by build-catalog.py. Do not edit by hand.
 import type { Action } from "../types"
 
 export const ACTIONS: Action[] = [
@@ -502,7 +502,7 @@ export const ACTIONS: Action[] = [
   "id": "unhurried-blinks",
   "title": {
    "el": "Κλείσε απαλά τα μάτια",
-   "en": "A gentle blink"
+   "en": "Gently close your eyes"
   },
   "category": "eyes",
   "durationSec": 60,
@@ -593,8 +593,8 @@ export const ACTIONS: Action[] = [
    "no-task"
   ],
   "cautions": {
-   "el": "-",
-   "en": "-"
+   "el": "",
+   "en": ""
   },
   "cooldownMin": 90
  },
@@ -641,8 +641,8 @@ export const ACTIONS: Action[] = [
    "adapted-protocol"
   ],
   "cautions": {
-   "el": "-",
-   "en": "-"
+   "el": "",
+   "en": ""
   },
   "cooldownMin": 120
  },

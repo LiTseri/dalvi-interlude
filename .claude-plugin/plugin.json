@@ -1,8 +1,8 @@
 {
   "name": "dalvi-interlude",
   "displayName": "Dalvì Interlude",
-  "version": "1.0.0",
-  "description": "Small, research-backed breaks inside Claude Code: /breathe anytime, gentle suggestions after long stretches of work, and optional nudges when work gets stuck.",
+  "version": "1.0.1",
+  "description": "Short, research-backed breaks inside Claude Code: /breathe anytime, a gentle suggestion after long stretches of work or when work gets stuck, and the study behind every break. Greek and English, private by design.",
   "types": "./types/index.d.ts",
   "author": {
     "name": "Princess M",
@@ -15,17 +15,19 @@
   "supportUrl": "https://github.com/LiTseri/dalvi-interlude/issues",
   "license": "MIT",
   "keywords": [
+    "wellbeing",
     "wellness",
     "breaks",
     "breathing",
-    "mods",
-    "wellbeing"
+    "eye-strain",
+    "focus",
+    "greek"
   ],
   "userConfig": {
     "profile": {
       "type": "string",
       "title": "Profile",
-      "description": "Type \"enterprise\" to lock the optional AI check off for everyone using this install. Leave \"default\" to let each person choose (it is off until they consent).",
+      "description": "Type \"enterprise\" to keep the optional AI check locked off; case and spaces don't matter. Leave \"default\" to let each person choose (it stays off until they consent).",
       "default": "default"
     }
   }

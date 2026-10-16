@@ -1,3 +1,8 @@
+> **Historical design record.** This is the creative and research proposal written before the mod was built
+> (3 October 2026). Some details changed during implementation: automatic suggestions are on by default, the
+> mod is built and tested, and the signals work as described in `signals.yaml`. For how the mod works today,
+> read the [README](../README.md); for the rules, the YAML files in this folder.
+
 # /breathe · Μικρές παύσεις με χαρακτήρα
 
 **Δημιουργική και ερευνητική πρόταση v1.1 — 3 Οκτωβρίου 2026 · αναθεώρηση v1.2 (ίδια ημέρα)**

@@ -1,4 +1,4 @@
-// GENERATED from spec/ui-copy.yaml by build-catalog. Do not edit by hand.
+// GENERATED from spec/ui-copy.yaml by build-catalog.py. Do not edit by hand.
 
 export const UI_COPY = {
  "card_messages": {

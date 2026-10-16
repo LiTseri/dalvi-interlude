@@ -1,28 +1,28 @@
-# /breathe — Rules v1.2 · 2026-10-03
-# v1.2 DECISIONS (product owner): time-based nudges ON by default (max_per_day=4, obvious setting,
-# 0 allowed). Text analysis (local heuristics + Phase 2 LLM) is opt-in in `default`; LLM locked off in
-# `enterprise`. The manual-only rule moved from time_rules to selection.exclude_tags_for_automatic.
-# /breathe remains available in every configuration.
-# Time-based nudges and text analysis are SEPARATE settings.
-# Settings, today's counters and recent-suggestion history persist locally; prompts and inferences never do.
-# interval_min=90 is an adjustable product default, NOT a validated biological threshold.
-# Activity means intentional session activity, not an autonomous agent's wall-clock run.
-# never_during_tool_run also requires a stable turn boundary: do not surface between nested tools.
-# Unstarted queued nudges: coalesce to one, cancel on snooze/quiet hours/daily cap/opt-out.
-# local time, overnight quiet-hour wrap, DST and explicit shift-hours preferences must be implemented.
-# A prefer rule is a SOFT rank, never an instruction to end work or drink water.
-# Rank order: signal > time preference > category rotation > evidence within compatible category.
-# Rotation: least recently offered category first; then evidence; random tie-break only among equals.
-# selection.exclude_tags_for_automatic removes manual-only from recommendations. Explicit menu choices bypass ONLY that tag,
-# never physical compatibility or the user's request. Any-zone entries remain available in the menu.
-# Automatic fallback MUST pass all gates; otherwise no nudge. Never force an excluded action.
-# Explicit /breathe ignores reminder caps, quiet hours, snooze and automatic cooldown.
-# heuristics/signals_llm values: off | opt_in | on. opt_in = off until the user explicitly enables it.
-# UI language: explicit user preference > stable conversation language > supported device locale > en.
-# Supported authored languages: el/en; do not imply other translations exist.
-# No new schema keys: language choice is a host/UI preference, specified in BREATHE_DESIGN_NOTES.md.
-# Phase 2 LLM: opt_in in `default` (consent text in signals.yaml names the model and provider terms);
-# off and locked in `enterprise` until infosec/compliance approval.
+# Dalvì Interlude · timing and selection rules · v1.0.1
+#
+# The rules behind automatic suggestions. hooks/select.ts mirrors this file (RULES, zones, pick);
+# keep the two in step when either changes.
+#
+# Settings:
+# - Automatic suggestions are on by default, up to max_per_day (0 turns them off). /breathe always works.
+# - Friction signals and the AI check are separate, opt-in settings (see signals.yaml and profiles below).
+# - Settings, today's counters and recent-suggestion history are stored locally; prompts and inferences never.
+#
+# Gates every automatic card passes (none apply to an explicit /breathe):
+# - 90 minutes of active time (time between the person's own prompts and their turns; a pause over
+#   idle_reset_min starts the count again). 90 is a product default, not a biological threshold.
+# - Only at the end of a turn the person started, never while Claude is working.
+# - Daily limit, snooze, "No more today", quiet hours (local time, wrapping past midnight) and a minimum
+#   gap between cards. A waiting card steps aside once quiet hours, "No more today" or a limit of 0 apply.
+#
+# Selection (hooks/select.ts → pick):
+# - Automatic: filter manual-only, time of day, cooldown and exclusions; then rank by signal fit, then the
+#   zone's preferred categories (a soft preference, never an instruction), then the least recently offered
+#   category, then evidence level; random only among equals.
+# - Explicit /breathe: any fitting break at random, for variety. A category choice also opens manual-only ones.
+# - If nothing passes, there is no card. Nothing is ever forced.
+#
+# Language: explicit setting > the language the person writes in > device locale > English.
 
 active_time:
   idle_reset_min: 15
@@ -42,7 +42,7 @@ nudges:
   quiet_hours:
     from: '20:00'
     to: 08:00
-    user_configurable: true
+    user_configurable: false
 time_of_day:
   morning: 06:00-11:59
   midday: 12:00-14:59
@@ -103,7 +103,6 @@ selection:
   - prefer_signal_match
   - rotate
   - prefer_higher_evidence
-  fallback_action_id: unplanned-pause
   exclude_tags_for_automatic:
   - manual-only
   exclude_tags_for_automatic_rationale: 'Κανόνας προϊόντος (όχι κανόνας ώρας): οι απαιτητικές/ειδικές επιλογές
